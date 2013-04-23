@@ -35,7 +35,7 @@ if minor_version < 6:
            "--use_sqlite "
            "--enable_console "
            "--debug "
-           "--address=0.0.0.0 --port=8000 "
+           "--address=0.0.0.0 --port={port} "
            "--blobstore_path={storage}/application.blobstore "
            "--datastore_path={storage}/application.datastore "
            "--history_path={storage}/applation.datastore.history "
@@ -47,11 +47,14 @@ if minor_version < 6:
            "{extra_argv} .")
 else:
     cmd = ("dev_appserver.py "
-        # "--use_mtime_file_watcher "
-        "--log_level debug "
-        "--host=0.0.0.0 --port=8080 --admin_host=0.0.0.0 --admin_port=8083 "
-        "--api_port=8084 --show_mail_body --enable_task_running yes "
-        "--storage_path={storage} {extra_argv} .")
+           "--use_mtime_file_watcher "
+           "--log_level debug "
+           "--host=0.0.0.0 --port={port} "
+           "--admin_host=0.0.0.0 "
+           "--show_mail_body "
+           "--enable_task_running yes "
+           "--storage_path={storage} "
+           "{extra_argv} .")
 
 def mkdir_p(path):
     if os.path.isfile(path):
@@ -60,7 +63,7 @@ def mkdir_p(path):
         os.makedirs(path)
 
 
-def run_appserver(namespace, server_argv=None):
+def run_appserver(port, namespace, server_argv=None):
     if server_argv is None:
         server_argv = []
 
@@ -68,7 +71,8 @@ def run_appserver(namespace, server_argv=None):
     mkdir_p(storage_path)
 
     extra_args = " ".join(server_argv)
-    command = cmd.format(storage=storage_path, extra_argv=extra_args)
+    command = cmd.format(port=port, storage=storage_path,
+                         extra_argv=extra_args)
 
     print("Running {0!r}".format(command))
 
@@ -93,7 +97,7 @@ def main(argv=None):
                               "and searchindex data. Defaults to 'default'"))
     args = parser.parse_args(argv)
 
-    return run_appserver(args.namespace, server_argv)
+    return run_appserver(args.port, args.namespace, server_argv)
 
 
 if __name__ == "__main__":
