@@ -30,21 +30,23 @@ base = os.path.join(os.path.dirname(__file__), 'stores')
 storage = "{{base}}/{version}/{{namespace}}".format(version=gae_version)
 
 if minor_version < 6:
-    cmd = ("dev_appserver.py "
-           "--skip_sdk_update_check "
-           "--use_sqlite "
-           "--enable_console "
-           "--debug "
-           "--address=0.0.0.0 --port={port} "
-           "--blobstore_path={storage}/application.blobstore "
-           "--datastore_path={storage}/application.datastore "
-           "--history_path={storage}/applation.datastore.history "
-           "--logs_path={storage}/application.logs "
-           "--search_indexes_path={storage} "
-           "--disable_static_caching "
-           "--high_replication "
-           "--show_mail_body "
-           "{extra_argv} .")
+    cmd = ["dev_appserver.py ",
+           "--skip_sdk_update_check ",
+           "--use_sqlite ",
+           "--enable_console ",
+           "--debug ",
+           "--address=0.0.0.0 --port={port} ",
+           "--blobstore_path={storage}/application.blobstore ",
+           "--datastore_path={storage}/application.datastore ",
+           "--history_path={storage}/applation.datastore.history ",
+           "--search_indexes_path={storage} ",
+           "--disable_static_caching ",
+           "--high_replication ",
+           "--show_mail_body ",
+           "{extra_argv} ."]
+    if minor_version == 5:
+        cmd.insert(6, "--logs_path={storage}/application.logs ")
+    cmd = "".join(cmd)
 else:
     cmd = ("dev_appserver.py "
            "--use_mtime_file_watcher "
