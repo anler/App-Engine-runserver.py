@@ -16,47 +16,43 @@ import subprocess
 import argparse
 import shlex
 
-import google
+try:
+    from colors import red, green
+except ImportError:
+    red = green = lambda text: text
 
-
-match = re.search(r'appengine_(\d\.\d\.(\d))', google.__path__[0])
-gae_version = match.group(1)
-minor_version = int(match.group(2))
 
 _formatter = argparse.RawDescriptionHelpFormatter
 
-base = os.path.join(os.path.dirname(__file__), 'stores')
+config = {
+    'base': os.path.join(os.path.dirname(__file__), 'stores'),
+    'storage': '{base}/{namespace}',
+    'options': ['--use_mtime_file_watcher',
+                '--log_level debug',
+                '--host=0.0.0.0 --port={port}',
+                '--admin_host=0.0.0.0',
+                '--show_mail_body',
+                '--enable_task_running yes',
+                '--storage_path={storage}']
+}
 
-storage = "{{base}}/{version}/{{namespace}}".format(version=gae_version)
 
-if minor_version < 6:
-    cmd = ["dev_appserver.py ",
-           "--skip_sdk_update_check ",
-           "--use_sqlite ",
-           "--enable_console ",
-           "--debug ",
-           "--address=0.0.0.0 --port={port} ",
-           "--blobstore_path={storage}/application.blobstore ",
-           "--datastore_path={storage}/application.datastore ",
-           "--history_path={storage}/applation.datastore.history ",
-           "--search_indexes_path={storage} ",
-           "--disable_static_caching ",
-           "--high_replication ",
-           "--show_mail_body ",
-           "{extra_argv} ."]
-    if minor_version == 5:
-        cmd.insert(6, "--logs_path={storage}/application.logs ")
-    cmd = "".join(cmd)
-else:
-    cmd = ("dev_appserver.py "
-           "--use_mtime_file_watcher "
-           "--log_level debug "
-           "--host=0.0.0.0 --port={port} "
-           "--admin_host=0.0.0.0 "
-           "--show_mail_body "
-           "--enable_task_running yes "
-           "--storage_path={storage} "
-           "{extra_argv} .")
+def get_gae_version(version_file):
+    """Get gae version dict."""
+    with open(version_file) as f:
+        version_line = f.readline()
+
+    match = re.search(r'(?P<major>\d)\.(?P<minor>\d)\.(?P<build>\d)',
+                      version_line)
+    if match is None:
+        raise ValueError("I cannot understand format of the release number")
+
+    major_version = int(match.group('major'))
+    minor_version = int(match.group('minor'))
+    build_version = int(match.group('build'))
+
+    return major_version, minor_version, build_version
+
 
 def mkdir_p(path):
     if os.path.isfile(path):
@@ -69,14 +65,18 @@ def run_appserver(port, namespace, server_argv=None):
     if server_argv is None:
         server_argv = []
 
-    storage_path = storage.format(base=base, namespace=namespace)
+    storage_path = config['storage'].format(base=config['base'],
+                                            namespace=namespace)
     mkdir_p(storage_path)
 
-    extra_args = " ".join(server_argv)
-    command = cmd.format(port=port, storage=storage_path,
-                         extra_argv=extra_args)
+    options = config['options'][:]
+    options.extend(server_argv)
+    options = ' '.join(options).format(port=port, storage=storage_path)
 
-    print("Running {0!r}".format(command))
+    command = 'dev_appserver.py {options} .'.format(options=options)
+
+    print(green("Running devappserver.py with options:"))
+    print(green('\n'.join(options.split(' '))))
 
     return subprocess.call(command, shell=True)
 
@@ -103,4 +103,27 @@ def main(argv=None):
 
 
 if __name__ == "__main__":
+    import google
+
+    gae_version_path = os.path.join(google.__path__[0], '..', 'VERSION')
+    major, minor, build = get_gae_version(gae_version_path)
+
+    if build < 6:
+        config['options'] = [
+            "--skip_sdk_update_check",
+            "--use_sqlite",
+            "--enable_console",
+            "--debug",
+            "--address=0.0.0.0",
+            "--port={port}",
+            "--blobstore_path={storage}/application.blobstore",
+            "--datastore_path={storage}/application.datastore",
+            "--history_path={storage}/applation.datastore.history",
+            "--search_indexes_path={storage}",
+            "--disable_static_caching",
+            "--high_replication",
+            "--show_mail_body"]
+        if build == 5:
+            config['options'].append("--logs_path={storage}/application.logs")
+
     sys.exit(main())
