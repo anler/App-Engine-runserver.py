@@ -19,6 +19,7 @@ import shlex
 try:
     from colors import red, green
 except ImportError:
+    # pycolors not found
     red = green = lambda text: text
 
 
