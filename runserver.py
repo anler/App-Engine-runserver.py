@@ -28,13 +28,7 @@ _formatter = argparse.RawDescriptionHelpFormatter
 config = {
     'base': os.path.join(os.path.dirname(__file__), 'stores'),
     'storage': '{base}/{namespace}',
-    'options': ['--use_mtime_file_watcher',
-                '--log_level debug',
-                '--host=0.0.0.0 --port={port}',
-                '--admin_host=0.0.0.0',
-                '--show_mail_body',
-                '--enable_task_running yes',
-                '--storage_path={storage}']
+    'options': ['--show_mail_body', '--backends']
 }
 
 
@@ -110,21 +104,28 @@ if __name__ == "__main__":
     major, minor, build = get_gae_version(gae_version_path)
 
     if build < 6:
-        config['options'] = [
-            "--skip_sdk_update_check",
-            "--use_sqlite",
-            "--enable_console",
-            "--debug",
-            "--address=0.0.0.0",
-            "--port={port}",
-            "--blobstore_path={storage}/application.blobstore",
-            "--datastore_path={storage}/application.datastore",
-            "--history_path={storage}/applation.datastore.history",
-            "--search_indexes_path={storage}",
-            "--disable_static_caching",
-            "--high_replication",
-            "--show_mail_body"]
+        options = ["--skip_sdk_update_check",
+                   "--use_sqlite",
+                   "--enable_console",
+                   "--debug",
+                   "--address=0.0.0.0",
+                   "--port={port}",
+                   "--blobstore_path={storage}/application.blobstore",
+                   "--datastore_path={storage}/application.datastore",
+                   "--history_path={storage}/applation.datastore.history",
+                   "--search_indexes_path={storage}",
+                   "--disable_static_caching",
+                   "--high_replication"]
         if build == 5:
-            config['options'].append("--logs_path={storage}/application.logs")
+            options.append("--logs_path={storage}/application.logs")
+    else:
+        options = ['--use_mtime_file_watcher',
+                   '--log_level debug',
+                   '--host=0.0.0.0 --port={port}',
+                   '--admin_host=0.0.0.0',
+                   '--enable_task_running yes',
+                   '--storage_path={storage}']
+
+    config['options'].extend(options)
 
     sys.exit(main())
