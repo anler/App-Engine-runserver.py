@@ -28,7 +28,7 @@ _formatter = argparse.RawDescriptionHelpFormatter
 config = {
     'base': os.path.join(os.path.dirname(__file__), 'stores'),
     'storage': '{base}/{namespace}',
-    'options': ['--show_mail_body', '--backends']
+    'options': ['--show_mail_body']
 }
 
 
@@ -86,8 +86,8 @@ def main(argv=None):
     else:
         server_argv = None
     parser = argparse.ArgumentParser(
-            description=__doc__,
-            formatter_class=argparse.RawDescriptionHelpFormatter)
+        description=__doc__,
+        formatter_class=argparse.RawDescriptionHelpFormatter)
     parser.add_argument("port", help="Port for the server to run on")
     parser.add_argument("namespace", default="default", nargs="?",
                         help=("Namespace in which store datastore, blobstore "
@@ -125,6 +125,8 @@ if __name__ == "__main__":
                    '--admin_host=0.0.0.0',
                    '--enable_task_running yes',
                    '--storage_path={storage}']
+        if build < 8:
+            options.append('--backends')
 
     config['options'].extend(options)
 
